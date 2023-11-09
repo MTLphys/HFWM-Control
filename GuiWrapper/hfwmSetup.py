@@ -8,8 +8,10 @@ import dearpygui.dearpygui as dpg
 import numpy as np 
 import matplotlib.pyplot as plt 
 import time as t 
+from lockinControl import *
 
 def runHFWM(sender,data,userdata):
+    device,session = connect()
     stagea = dpg.get_value(userdata[0])
     stageb = dpg.get_value(userdata[1])
     speeda = dpg.get_value(userdata[2])
@@ -26,18 +28,29 @@ def runHFWM(sender,data,userdata):
     unitb = dpg.get_value(userdata[13])
     pb = userdata[14]
     textureid = userdata[15]
+    inttime = dpg.get_value(userdata[17])
     x= np.linspace(starta,enda,int(stepsa))
     y= np.linspace(startb,endb,int(stepsb))
     global z
     ztemp=np.zeros((int(stepsa),int(stepsb)))
+    print(np.shape(ztemp))
+    xaxis=np.flip(x)
+    ztemp= np.append(ztemp,[xaxis],axis=0)
+    ztemp=np.flipud(ztemp)
+    print(np.shape(ztemp))
+    yaxis =np.append(0,y)[np.newaxis]
+    yaxis = yaxis.transpose()
+    ztemp= np.append(ztemp,yaxis,axis=1)
+    ztemp=np.fliplr(ztemp)
+    print(np.shape(ztemp))
     fig,ax =plt.subplots()
     fig.set_dpi(100)
     fig.set_figwidth(8.8)
     fig.set_figheight(2.2)
     for i,xi in enumerate(x):
         for j,yi in enumerate(y): 
-            ztemp[i,j] = np.random.rand()
-        if( i%10==0 ):
+            ztemp[i+1,j+1] = len(polldata(device,session,inttime))
+        if( i%1==0 ):
             ax.imshow(ztemp,extent=[starta,enda,startb,endb])
             fig.savefig('updatedimage.png',dpi=100)
             #t.sleep(.1)
@@ -45,6 +58,7 @@ def runHFWM(sender,data,userdata):
             dpg.set_value(textureid,data)
         dpg.set_value(pb,(i+1)/stepsa)
         z=ztemp
+        
     ax.imshow(ztemp,extent=[starta,enda,startb,endb])
     fig.savefig('updatedimage.png',dpi=100)
     #t.sleep(.1)
@@ -55,8 +69,8 @@ def runHFWM(sender,data,userdata):
     print('done')
 def savefile(sender,data,userdata):
     global z
-    print(np.shape(z))
-    print(data)
+    print('saving file to: ', data['file_path_name'])
+    np.savetxt(data['file_path_name'],z,delimiter=';')    
 def savecanceled(sender,data,userdata):
     print('save Attempt canceled')
     print(data)

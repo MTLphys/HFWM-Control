@@ -99,6 +99,8 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
                                        width=100)
         endb = dpg.add_input_double(label='End b',default_value=dpg.get_value(destination),
                                        width=100)
+        inttime = dpg.add_input_double(label='Integration time [s]',default_value=.05,
+                                       width=100)
     #set stage increment
     with dpg.group(horizontal= True): 
         stepsa = dpg.add_input_double(label='steps stage a',default_value=100,
@@ -117,11 +119,11 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
                    speeda,speedb ,#[2,3]
                    sunita,sunitb ,#[4,5]
                    starta,startb ,#[6,7]
-                   enda, endb,#[8,9]
-                   stepsa,stepsb,#[10,11]
-                   unita,unitb, #[12,13]
-                   pb,texture_id,
-                   zvalues] #[14,15]
+                   enda, endb,    #[8,9]
+                   stepsa,stepsb, #[10,11]
+                   unita,unitb,   #[12,13]
+                   pb,texture_id, #[14,15]
+                   zvalues,inttime] #[16,17]
     dpg.add_file_dialog(
         directory_selector=True, show=False, callback=savefile, tag="file_dialog_id",
         cancel_callback=savecanceled, width=700 ,height=400)
