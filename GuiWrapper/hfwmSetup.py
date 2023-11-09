@@ -28,23 +28,35 @@ def runHFWM(sender,data,userdata):
     textureid = userdata[15]
     x= np.linspace(starta,enda,int(stepsa))
     y= np.linspace(startb,endb,int(stepsb))
-    z=np.zeros((int(stepsa),int(stepsb)))
+    global z
+    ztemp=np.zeros((int(stepsa),int(stepsb)))
     fig,ax =plt.subplots()
     fig.set_dpi(100)
     fig.set_figwidth(8.8)
     fig.set_figheight(2.2)
     for i,xi in enumerate(x):
         for j,yi in enumerate(y): 
-            z[i,j] = np.random.rand()
-        ax.imshow(z,extent=[starta,enda,startb,endb])
-        fig.savefig('updatedimage.png',dpi=100)
-        t.sleep(.1)
-        width, height, channels, data = dpg.load_image("updatedimage.png")
-        dpg.set_value(textureid,data)
-        dpg.set_value(pb,i/stepsa)
-        
-        
-        
-        
-        
+            ztemp[i,j] = np.random.rand()
+        if( i%10==0 ):
+            ax.imshow(ztemp,extent=[starta,enda,startb,endb])
+            fig.savefig('updatedimage.png',dpi=100)
+            #t.sleep(.1)
+            width, height, channels, data = dpg.load_image("updatedimage.png")
+            dpg.set_value(textureid,data)
+        dpg.set_value(pb,(i+1)/stepsa)
+        z=ztemp
+    ax.imshow(ztemp,extent=[starta,enda,startb,endb])
+    fig.savefig('updatedimage.png',dpi=100)
+    #t.sleep(.1)
+    width, height, channels, data = dpg.load_image("updatedimage.png")
+    dpg.set_value(textureid,data)
+    
+
     print('done')
+def savefile(sender,data,userdata):
+    global z
+    print(np.shape(z))
+    print(data)
+def savecanceled(sender,data,userdata):
+    print('save Attempt canceled')
+    print(data)

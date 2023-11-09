@@ -17,7 +17,7 @@ dpg.create_viewport(title='Main Context',width=900,height=600)
 unitlist =['fs','ps','um','mm']
 sunitlist=['fs/s','ps/s','um/s','mm/s']
 stages   =['k1','k2','k3']
-
+z = np.zeros(1)
 #set up a storage location for figures
 figurefile='figureplot.png'
 #display a simple icon
@@ -112,6 +112,7 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
         unitb = dpg.add_combo(unitlist,label='stage b units', 
                                width=50,default_value='fs')
     #run 
+    zvalues=np.zeros(1)
     runpackage = [ stagea,stageb, #[0,1]
                    speeda,speedb ,#[2,3]
                    sunita,sunitb ,#[4,5]
@@ -119,10 +120,14 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
                    enda, endb,#[8,9]
                    stepsa,stepsb,#[10,11]
                    unita,unitb, #[12,13]
-                   pb,texture_id] #[14,15]
-                   
-    dpg.add_button(label='Run',callback=runHFWM,user_data=runpackage,width=100)#,userdata=runpackage,callback=runHFWM)
-    
+                   pb,texture_id,
+                   zvalues] #[14,15]
+    dpg.add_file_dialog(
+        directory_selector=True, show=False, callback=savefile, tag="file_dialog_id",
+        cancel_callback=savecanceled, width=700 ,height=400)
+    with dpg.group(horizontal=True):               
+        dpg.add_button(label='Run',callback=runHFWM,user_data=runpackage,width=100)#,userdata=runpackage,callback=runHFWM)
+        dpg.add_button(label='Savecollection',callback=lambda:dpg.show_item('file_dialog_id'))
 
     
 
