@@ -14,50 +14,65 @@ dpg.create_context()
 dpg.create_viewport(title='Main Context',width=900,height=600)
 
 #set up units and stages:
-unitlist =['fs','ps','um','mm']
-sunitlist=['fs/s','ps/s','um/s','mm/s']
+unitlist =['fs','ps','um','mm','cts']
+sunitlist=['fs/s','ps/s','um/s','mm/s','cts/s']
 stages   =['k1','k2','k3']
+devices = populatePorts()
 z = np.zeros(1)
 #set up a storage location for figures
 figurefile='figureplot.png'
 #display a simple icon
 dpg.set_viewport_small_icon("Icon.ico")
 dpg.set_viewport_large_icon("Icon.ico")
+dev = serial.Serial(baudrate=9600,timeout=1)
+initialize_stageControl(dev)
 #set up stage initialization window all callbacks in stageControl.py
-with dpg.window(label='Stage Control Window',width=380,height=250):
+with dpg.window(label='Stage Control Window',width=380,height=250,on_close=closeConnect):
     #setup control for stage initialization
     dpg.add_text('Stage Control')
     sstatus = dpg.add_text('Stage status:inactive')
+    with dpg.group(horizontal=True):
+        port = dpg.add_combo(devices,width=60,label='Select Device')
+        dpg.add_button(label='connect device',callback=connectDevice,
+                       user_data=port)
     #stage monitor
     with dpg.group(horizontal=True):
-        stage=dpg.add_combo(stages,label='Select Stage',width=50,default_value='k1')
+        stage=dpg.add_combo(stages,label='Select Stage',width=50,
+                            default_value='k1')
         position = dpg.add_text('Current Position: Unknown')
-    #stage zero/position
-    with dpg.group(horizontal=True):
-        dpg.add_button(label='Zero Stage',callback=zerostage,user_data=[position,sstatus])
-        dpg.add_button(label='Get Position',callback=getposition,user_data=[position,sstatus])
+    
         
     #translation control for stage positioning 
     with dpg.group(horizontal=True):    
         speed = dpg.add_input_double(label='Speed',default_value=6000,width=100)
         destination = dpg.add_input_double(label='Destination',width=100)
        
-    #unit setting and motion 
+    #unit setting 
     with dpg.group(horizontal=True): 
         units = dpg.add_combo(['fs','ps','um','mm'],label='units',
                               width=50,default_value='fs')
         sunits = dpg.add_combo(['fs/s','ps/s','um/s','mm/s'],label='speed units',
                                width=50,default_value='fs/s')
+    
+    #stage zero/position
+    with dpg.group(horizontal=True):
+        dpg.add_button(label='Zero Stage',callback=zeroStage,
+                       user_data=[position,sstatus,stage])
+        dpg.add_button(label='Get Position',callback=getPosition,
+                       user_data=[position,sstatus,stage,units])
+        
     #execute motion
     with dpg.group(horizontal=True):
-        dpg.add_button(label='Move Stage',callback=movestage,user_data=[destination,position,stage,units,speed,sunits,sstatus])
+        dpg.add_button(label='Move Stage',callback=moveStage,
+                       user_data=[destination,position,stage,units,speed,sunits,sstatus])
 
-with dpg.window(label="HFWM Data Monitor",pos=(0,250),width=880,height=300):
+#set up window for displaying plot 
+with dpg.window(label="HFWM Data Monitor",pos=(0,250),width=500,height=300):
     x= np.linspace(-10,10)
     y= np.linspace(-10,10)
     X,Y = np.meshgrid(x,y)
     Z = X+Y
-    plt.figure(figsize=(8.80,2.20),dpi=100)
+    plt.figure(figsize=(5.0,2.20),dpi=100)
     plt.imshow(Z)
     plt.savefig('defaultimage.png',dpi=100)
     
@@ -67,21 +82,23 @@ with dpg.window(label="HFWM Data Monitor",pos=(0,250),width=880,height=300):
     dpg.add_image(texture_id)
     pb =dpg.add_progress_bar()
     
-
-
 #HFWM set up window all info in hfwmSetup.py
 with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
     #select stages
     with dpg.group(horizontal=True):
-        stagea = dpg.add_combo(stages,label='Select Stage a',default_value='k1',width=100)
-        stageb = dpg.add_combo(stages,label='Select Stage b',default_value='k2',width=100)
+        stagea = dpg.add_combo(stages,label='Select Stage a',
+                               default_value='k1',width=100)
+        stageb = dpg.add_combo(stages,label='Select Stage b',
+                               default_value='k3',width=100)
     #set stage speeds 
     with dpg.group(horizontal=True):
-        speeda = dpg.add_input_double(label='Stage b speed',default_value=dpg.get_value(speed),
-                                       width=100)
-        speedb = dpg.add_input_double(label='Stage a speed',default_value=dpg.get_value(speed),
+        speeda = dpg.add_input_double(label='Stage b speed',
+                                      default_value=dpg.get_value(speed), 
                                       width=100)
-
+        speedb = dpg.add_input_double(label='Stage a speed',
+                                      default_value=dpg.get_value(speed),
+                                      width=100)
+    #set stage units 
     with dpg.group(horizontal= True): 
         sunita = dpg.add_combo(sunitlist,label='stage a speed units',
                                width=50,default_value='fs/s')
@@ -95,17 +112,22 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
                                        width=100)
     #set stage end point
     with dpg.group(horizontal= True): 
-        enda = dpg.add_input_double(label='End a',default_value=dpg.get_value(destination),
-                                       width=100)
-        endb = dpg.add_input_double(label='End b',default_value=dpg.get_value(destination),
-                                       width=100)
-        inttime = dpg.add_input_double(label='Integration time [s]',default_value=.05,
-                                       width=100)
+        enda = dpg.add_input_double(label='End a',
+                                    default_value=dpg.get_value(destination),
+                                    width=100)
+        endb = dpg.add_input_double(label='End b',
+                                    default_value=dpg.get_value(destination),
+                                    width=100)
+        inttime = dpg.add_input_double(label='Integration time [s]',
+                                    default_value=.05,
+                                    width=100)
     #set stage increment
     with dpg.group(horizontal= True): 
-        stepsa = dpg.add_input_double(label='steps stage a',default_value=100,
+        stepsa = dpg.add_input_double(label='steps stage a',
+                                      default_value=100,
                                        width=100)
-        stepsb = dpg.add_input_double(label='steps stage b',default_value=100,
+        stepsb = dpg.add_input_double(label='steps stage b',
+                                      default_value=100,
                                        width=100)
     #set stage speed units
     with dpg.group(horizontal= True): 
@@ -128,14 +150,17 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
         directory_selector=True, show=False, callback=savefile, tag="file_dialog_id",
         cancel_callback=savecanceled, width=700 ,height=400)
     with dpg.group(horizontal=True):               
-        dpg.add_button(label='Run',callback=runHFWM,user_data=runpackage,width=100)#,userdata=runpackage,callback=runHFWM)
-        dpg.add_button(label='Savecollection',callback=lambda:dpg.show_item('file_dialog_id'))
+        dpg.add_button(label='Run',callback=runHFWM,
+                       user_data=runpackage,width=100)
+                    #,userdata=runpackage,callback=runHFWM)
+        dpg.add_button(label='Savecollection',
+                       callback=lambda:dpg.show_item('file_dialog_id'))
 
     
 
-
 dpg.setup_dearpygui()
 dpg.show_viewport()
+dpg.maximize_viewport()
 #dpg.set_primary_window(window=0,value=True)
 dpg.start_dearpygui()
 dpg.destroy_context()

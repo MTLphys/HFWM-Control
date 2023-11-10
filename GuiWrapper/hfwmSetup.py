@@ -45,7 +45,7 @@ def runHFWM(sender,data,userdata):
     print(np.shape(ztemp))
     fig,ax =plt.subplots()
     fig.set_dpi(100)
-    fig.set_figwidth(8.8)
+    fig.set_figwidth(5.0)
     fig.set_figheight(2.2)
     for i,xi in enumerate(x):
         for j,yi in enumerate(y): 
