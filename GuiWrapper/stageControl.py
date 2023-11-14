@@ -23,34 +23,34 @@ conversion = {
                     'ps':43647.6698639934,
                     'um':145.635555555556,
                     'mm':145635.555555556,
-                    'cts':1,
+                    'ct':1,
                     'fs/s':43.6476698639934,
                     'ps/s':43647.6698639934,
                     'um/s':145.635555555556,
                     'mm/s':145635.555555556,
-                    'cts/s':1},
+                    'ct/s':1},
               'k2': {
                     'fs':9.09705341041977,
                     'ps':9097.05341041977,
                     'um':30.3533827,
                     'mm':30353.3827,
-                    'cts':1,
+                    'ct':1,
                     'fs/s':9.09705341041977,
                     'ps/s':9097.05341041977,
                     'um/s':30.3533827,
                     'mm/s':30353.3827,
-                    'cts/s':1},
+                    'ct/s':1},
               'k3': {
                     'fs':9.09705341041977,
                     'ps':9097.05341041977,
                     'um':30.3533827,
                     'mm':30353.3827,
-                    'cts':1,
+                    'ct':1,
                     'fs/s':9.09705341041977,
                     'ps/s':9097.05341041977,
                     'um/s':30.3533827,
                     'mm/s':30353.3827,
-                    'cts/s':1}
+                    'ct/s':1}
               }
 
 this.dev = None 
@@ -283,7 +283,7 @@ def runHFWM(sender,data,userdata):
         [14] progress bar [15] texture location for plotting image
         [16] integration time """
     #connect to zurich instruments lock in amplifier
-    device,session = connect()
+
     
     #set up the variables in a readable format
     stagea = dpg.get_value(userdata[0])
@@ -300,7 +300,7 @@ def runHFWM(sender,data,userdata):
     stepsb = dpg.get_value(userdata[11])
     unita = dpg.get_value(userdata[12])
     unitb = dpg.get_value(userdata[13])
-    
+
     #prime stage a 
     stageSelection(stagea)
     speeda = speeda*conversion[stagea][sunita]
@@ -317,7 +317,7 @@ def runHFWM(sender,data,userdata):
 
     #set integration time 
     inttime = dpg.get_value(userdata[17])
-
+    device,session,daqmodule = connect(inttime)
     #generate xy space for raster
     x= np.linspace(starta,enda,int(stepsa))
     y= np.linspace(startb,endb,int(stepsb))
@@ -327,12 +327,12 @@ def runHFWM(sender,data,userdata):
 
     #set up temparary storage variable for z with dimensions along xy  
     ztemp=np.zeros((int(stepsa),int(stepsb)))
-    xaxis=np.flip(x)
-    ztemp= np.append(ztemp,[xaxis],axis=0)
+    yaxis=np.flip(y)
+    ztemp= np.append(ztemp,[yaxis],axis=0)
     ztemp=np.flipud(ztemp)
-    yaxis =np.append(0,y)[np.newaxis]
-    yaxis = yaxis.transpose()
-    ztemp= np.append(ztemp,yaxis,axis=1)
+    xaxis =np.append(0,x)[np.newaxis]
+    xaxis = xaxis.transpose()
+    ztemp= np.append(ztemp,xaxis,axis=1)
     ztemp=np.fliplr(ztemp)
     
     #Set up figure 
@@ -340,35 +340,57 @@ def runHFWM(sender,data,userdata):
     fig.set_dpi(100)
     fig.set_figwidth(5.0)
     fig.set_figheight(2.2)
-    ax.set_xlabel('stage '+stagea+' delay '+'['+unita+']')
-    ax.set_ylabel('stage '+stageb+' delay '+'['+unitb+']')
+    ax.set_xlabel('stage '+stageb+' delay '+'['+unitb+']')
+    ax.set_ylabel('stage '+stagea+' delay '+'['+unita+']')
     
     for i,xi in enumerate(x):
         #select and move stage a to new x positition
         stageSelection(stagea)
         dest= xi*conversion[stagea][unita]/-2
         moveTo(dest)
-        for j,yi in enumerate(y): 
+        for j,yi in enumerate(y):
+            dpg.set_value(pb,(i*stepsb+j)/(stepsa*stepsb)) 
             if(j==0):
                 #select stage b
                 stageSelection(stageb)
             dest= yi*conversion[stageb][unitb]/-2
             moveTo(dest)
-            ztemp[i+1,j+1] = len(polldata(device,session,inttime))
-        
+            ztemp[i+1,j+1] = np.mean((daqdata(device,session,daqmodule,inttime)))
+
         if( i % 1 == 0 ):
-            neg = ax.imshow(ztemp[1:,1:],extent=[starta,enda,startb,endb])
-            fig.colorbar(neg,ax=ax)
+            if((stepsa==1)|(stepsb==1)):
+                taxis = 0
+                if(stepsa == 1):
+                    taxis=y
+                    r = np.transpose(ztemp[1:,1:])
+                if(stepsb == 1):
+                    taxis=x
+                    r=ztemp[1:,1:]
+                if(i==0):
+                    line, = ax.plot(taxis,r)
+                    ax.set_ylim(ymax=np.max(ztemp[1:,1:])+.1*np.max(ztemp[1:,1:]))
+                else:
+                    line.set_ydata(r)
+                    ax.set_ylim(ymax=np.max(ztemp[1:,1:]))
+            else:
+                neg = ax.imshow(ztemp[1:,1:],extent=[startb,endb,enda,starta],aspect=np.abs((startb-endb)/(starta-endb)))
+                if(i==0):
+                    cbar=fig.colorbar(neg,ax=ax)
+                neg.set_clim(np.min(ztemp[1:,1:]),np.max(ztemp[1:,1:]))
             fig.canvas.draw()
-            data = np.frombuffer(fig.canvas.buffer_rgba())
+            data = np.frombuffer(fig.canvas.buffer_rgba(),dtype=np.uint8)
             dpg.set_value(textureid,data/255)
         
-        dpg.set_value(pb,(i+1)/stepsa)
+        
         z=ztemp
-
-    ax.imshow(ztemp[1:,1:],extent=[starta,enda,startb,endb])
+    if((stepsa==1)|(stepsb==1)):
+        line.set_ydata(ztemp[1:,1:])
+        ax.set_ylim(ymax=np.max(ztemp[1:,1:]))
+    else:
+        ax.imshow(ztemp[1:,1:],extent=[startb,endb,starta,enda],aspect=np.abs((startb-endb)/(starta-endb)))
+        neg.set_clim(np.min(ztemp[1:,1:]),np.max(ztemp[1:,1:]))
     fig.canvas.draw()
-    data = np.frombuffer(fig.canvas.buffer_rgba())
+    data = np.frombuffer(fig.canvas.buffer_rgba(),dtype=np.uint8)
     dpg.set_value(textureid,data/255)
     print('done')
 

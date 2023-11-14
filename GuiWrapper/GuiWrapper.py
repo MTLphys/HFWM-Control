@@ -9,13 +9,13 @@ import dearpygui.dearpygui as dpg
 from stageControl import *
 import numpy as np 
 import matplotlib.pyplot as plt
-
+import zhinst
 dpg.create_context()
 dpg.create_viewport(title='Main Context',width=900,height=600)
 
 #set up units and stages:
-unitlist =['fs','ps','um','mm','cts']
-sunitlist=['fs/s','ps/s','um/s','mm/s','cts/s']
+unitlist =['fs','ps','um','mm','ct']
+sunitlist=['fs/s','ps/s','um/s','mm/s','ct/s']
 stages   =['k1','k2','k3']
 devices = populatePorts()
 z = np.zeros(1)
@@ -37,22 +37,24 @@ with dpg.window(label='Stage Control Window',width=380,height=250,on_close=close
                        user_data=port)
     #stage monitor
     with dpg.group(horizontal=True):
-        stage=dpg.add_combo(stages,label='Select Stage',width=50,
+        stage=dpg.add_combo(stages,label='Stage',width=50,
                             default_value='k1')
         position = dpg.add_text('Current Position: Unknown')
     
         
     #translation control for stage positioning 
     with dpg.group(horizontal=True):    
-        speed = dpg.add_input_double(label='Speed',default_value=6000,width=100)
-        destination = dpg.add_input_double(label='Destination',width=100)
+        destination = dpg.add_input_double(label='',width=100)
+        units = dpg.add_combo(unitlist,label='Destination',
+                              width=50,default_value='fs')
+
        
     #unit setting 
     with dpg.group(horizontal=True): 
-        units = dpg.add_combo(['fs','ps','um','mm'],label='units',
-                              width=50,default_value='fs')
-        sunits = dpg.add_combo(['fs/s','ps/s','um/s','mm/s'],label='speed units',
-                               width=50,default_value='fs/s')
+        speed = dpg.add_input_double(label='',default_value=6000,
+                               width=100)
+        sunits = dpg.add_combo(sunitlist,label='Speed',
+                               width=50,default_value='ct/s')
     
     #stage zero/position
     with dpg.group(horizontal=True):
@@ -73,11 +75,10 @@ with dpg.window(label="HFWM Data Monitor",pos=(0,250),width=520,height=300):
     X,Y = np.meshgrid(x,y)
     Z = X+Y
     fig,ax = plt.subplots(layout='compressed')
-
     neg = ax.imshow(Z,extent=[-10,10,-10,10])
     fig.colorbar(neg, ax=ax)
-    ax.set_xlabel('stage a delay')
-    ax.set_ylabel('stage b delay')
+    ax.set_xlabel('stage b delay')
+    ax.set_ylabel('stage a delay')
     fig.set_dpi(100)
     fig.set_figwidth(5.0)
     fig.set_figheight(2.2)
@@ -102,48 +103,48 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
                                default_value='k3',width=100)
     #set stage speeds 
     with dpg.group(horizontal=True):
-        speeda = dpg.add_input_double(label='Stage b speed',
+        speeda = dpg.add_input_double(label='',
                                       default_value=dpg.get_value(speed), 
                                       width=100)
-        sunita = dpg.add_combo(sunitlist,label='stage a speed units',
-                                width=50,default_value='fs/s')
+        sunita = dpg.add_combo(sunitlist,label='stage a speed',
+                                width=50,default_value='ct/s')
         
     #set stage units 
     with dpg.group(horizontal= True): 
-        speedb = dpg.add_input_double(label='Stage a speed',
+        speedb = dpg.add_input_double(label='',
                                       default_value=dpg.get_value(speed),
                                       width=100)
-        sunitb = dpg.add_combo(sunitlist,label='stage b speed units', 
-                               width=50,default_value='fs/s')
+        sunitb = dpg.add_combo(sunitlist,label='stage b speed', 
+                               width=50,default_value='ct/s')
     #set stage start point 
     with dpg.group(horizontal= True): 
-        starta = dpg.add_input_double(label='Start a',default_value=0,
+        starta = dpg.add_input_double(label='Start a',default_value=-1.2,
                                        width=100)
 
         enda = dpg.add_input_double(label='End a',
-                                    default_value=dpg.get_value(destination),
+                                    default_value=1.2,
                                     width=100)
     #set stage end point
     with dpg.group(horizontal= True): 
-        startb = dpg.add_input_double(label='Start b',default_value=0,
+        startb = dpg.add_input_double(label='Start b',default_value=-1.2,
                                        width=100)        
         endb = dpg.add_input_double(label='End b',
-                                    default_value=dpg.get_value(destination),
+                                    default_value=1.2,
                                     width=100)
     #set stage units
     with dpg.group(horizontal= True): 
         unita = dpg.add_combo(unitlist,label='stage a units',
-                               width=50,default_value='fs')
+                               width=50,default_value='ps')
         unitb = dpg.add_combo(unitlist,label='stage b units', 
-                               width=50,default_value='fs')
+                               width=50,default_value='ps')
 
     #set stage increment
     with dpg.group(horizontal= True): 
         stepsa = dpg.add_input_int(label='steps stage a',
-                                      default_value=100,
+                                      default_value=25,
                                        width=100)
         stepsb = dpg.add_input_int(label='steps stage b',
-                                      default_value=100,
+                                      default_value=25,
                                        width=100)
     inttime = dpg.add_input_double(label='Integration time [s]',
                                 default_value=.05,
