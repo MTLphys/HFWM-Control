@@ -12,7 +12,9 @@ import matplotlib.pyplot as plt
 import zhinst
 dpg.create_context()
 dpg.create_viewport(title='Main Context',width=900,height=600)
-
+with dpg.font_registry():
+    default_font = dpg.add_font('GuiWrapper/Montserrat-Regular.otf',20)
+dpg.bind_font(default_font)
 #set up units and stages:
 unitlist =['fs','ps','um','mm','ct']
 sunitlist=['fs/s','ps/s','um/s','mm/s','ct/s']
@@ -27,34 +29,34 @@ dpg.set_viewport_large_icon("Icon.ico")
 dev = serial.Serial(baudrate=9600,timeout=1)
 initialize_stageControl(dev)
 #set up stage initialization window all callbacks in stageControl.py
-with dpg.window(label='Stage Control Window',width=380,height=250,on_close=closeConnect):
+with dpg.window(label='Stage Control Window',width=440,height=310,on_close=closeConnect):
     #setup control for stage initialization
     dpg.add_text('Stage Control')
     sstatus = dpg.add_text('Stage status:inactive')
     with dpg.group(horizontal=True):
-        port = dpg.add_combo(devices,width=60,label='Select Device')
+        port = dpg.add_combo(devices,width=100,label='Select Device')
         dpg.add_button(label='connect device',callback=connectDevice,
                        user_data=port)
     #stage monitor
     with dpg.group(horizontal=True):
-        stage=dpg.add_combo(stages,label='Stage',width=50,
+        stage=dpg.add_combo(stages,label='Stage',width=70,
                             default_value='k1')
         position = dpg.add_text('Current Position: Unknown')
     
         
     #translation control for stage positioning 
     with dpg.group(horizontal=True):    
-        destination = dpg.add_input_double(label='',width=100)
+        destination = dpg.add_input_double(label='',width=150)
         units = dpg.add_combo(unitlist,label='Destination',
-                              width=50,default_value='fs')
+                              width=70,default_value='fs')
 
        
     #unit setting 
     with dpg.group(horizontal=True): 
         speed = dpg.add_input_double(label='',default_value=6000,
-                               width=100)
+                               width=150)
         sunits = dpg.add_combo(sunitlist,label='Speed',
-                               width=50,default_value='ct/s')
+                               width=70,default_value='ct/s')
     
     #stage zero/position
     with dpg.group(horizontal=True):
@@ -67,9 +69,10 @@ with dpg.window(label='Stage Control Window',width=380,height=250,on_close=close
     with dpg.group(horizontal=True):
         dpg.add_button(label='Move Stage',callback=moveStage,
                        user_data=[destination,position,stage,units,speed,sunits,sstatus])
+        
 
 #set up window for displaying plot 
-with dpg.window(label="HFWM Data Monitor",pos=(0,250),width=520,height=300):
+with dpg.window(label="HFWM Data Monitor",pos=(0,310),width=680,height=700):
     x= np.linspace(-10,10)
     y= np.linspace(-10,10)
     X,Y = np.meshgrid(x,y)
@@ -80,21 +83,22 @@ with dpg.window(label="HFWM Data Monitor",pos=(0,250),width=520,height=300):
     ax.set_xlabel('stage b delay')
     ax.set_ylabel('stage a delay')
     fig.set_dpi(100)
-    fig.set_figwidth(5.0)
-    fig.set_figheight(2.2)
+    fig.set_figwidth(5.8)
+    fig.set_figheight(5.8)
     fig.canvas.draw()
     data= np.frombuffer(fig.canvas.buffer_rgba(),dtype=np.uint8)
-    width =500
-    height=220
+    width =580
+    height=580
 
     print(np.shape(data))
     with dpg.texture_registry():
         texture_id = dpg.add_dynamic_texture(width, height, data/255)
     dpg.add_image(texture_id)
-    pb =dpg.add_progress_bar(width=500)
+    pb =dpg.add_progress_bar(width=580)
+    timemonitor =dpg.add_text(default_value="--.-- minutes complete, --.-- minutes remaining")
     
 #HFWM set up window all info in hfwmSetup.py
-with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
+with dpg.window(label="HFWM Setup",pos=(440,0),width=560,height=310):
     #select stages
     with dpg.group(horizontal=True):
         stagea = dpg.add_combo(stages,label='Select Stage a',
@@ -105,50 +109,50 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
     with dpg.group(horizontal=True):
         speeda = dpg.add_input_double(label='',
                                       default_value=dpg.get_value(speed), 
-                                      width=100)
+                                      width=150)
         sunita = dpg.add_combo(sunitlist,label='stage a speed',
-                                width=50,default_value='ct/s')
+                                width=70,default_value='ct/s')
         
     #set stage units 
     with dpg.group(horizontal= True): 
         speedb = dpg.add_input_double(label='',
                                       default_value=dpg.get_value(speed),
-                                      width=100)
+                                      width=150)
         sunitb = dpg.add_combo(sunitlist,label='stage b speed', 
-                               width=50,default_value='ct/s')
+                               width=70,default_value='ct/s')
     #set stage start point 
     with dpg.group(horizontal= True): 
         starta = dpg.add_input_double(label='Start a',default_value=-1.2,
-                                       width=100)
+                                       width=150)
 
         enda = dpg.add_input_double(label='End a',
                                     default_value=1.2,
-                                    width=100)
+                                    width=150)
     #set stage end point
     with dpg.group(horizontal= True): 
         startb = dpg.add_input_double(label='Start b',default_value=-1.2,
-                                       width=100)        
+                                       width=150)        
         endb = dpg.add_input_double(label='End b',
                                     default_value=1.2,
-                                    width=100)
+                                    width=150)
     #set stage units
     with dpg.group(horizontal= True): 
         unita = dpg.add_combo(unitlist,label='stage a units',
-                               width=50,default_value='ps')
+                               width=70,default_value='ps')
         unitb = dpg.add_combo(unitlist,label='stage b units', 
-                               width=50,default_value='ps')
+                               width=70,default_value='ps')
 
     #set stage increment
     with dpg.group(horizontal= True): 
         stepsa = dpg.add_input_int(label='steps stage a',
                                       default_value=25,
-                                       width=100)
+                                       width=150)
         stepsb = dpg.add_input_int(label='steps stage b',
                                       default_value=25,
-                                       width=100)
+                                       width=150)
     inttime = dpg.add_input_double(label='Integration time [s]',
                                 default_value=.05,
-                                width=100)
+                                width=150)
     
     #run 
     zvalues=np.zeros(1)
@@ -160,7 +164,8 @@ with dpg.window(label="HFWM Setup",pos=(380,0),width=500,height=250):
                    stepsa,stepsb, #[10,11]
                    unita,unitb,   #[12,13]
                    pb,texture_id, #[14,15]
-                   zvalues,inttime] #[16,17]
+                   zvalues,inttime,#[16,17]
+                   timemonitor] #[18]
     dpg.add_file_dialog(
         directory_selector=True, show=False, callback=savefile, tag="file_dialog_id",
         cancel_callback=savecanceled, width=700 ,height=400)

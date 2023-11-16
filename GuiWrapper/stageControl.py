@@ -314,6 +314,7 @@ def runHFWM(sender,data,userdata):
     #setting up the external widget locations  
     pb = userdata[14]
     textureid = userdata[15]
+    timemonitor= userdata[18]
 
     #set integration time 
     inttime = dpg.get_value(userdata[17])
@@ -342,7 +343,7 @@ def runHFWM(sender,data,userdata):
     fig.set_figheight(2.2)
     ax.set_xlabel('stage '+stageb+' delay '+'['+unitb+']')
     ax.set_ylabel('stage '+stagea+' delay '+'['+unita+']')
-    
+    tstart = t.time()
     for i,xi in enumerate(x):
         #select and move stage a to new x positition
         stageSelection(stagea)
@@ -380,7 +381,12 @@ def runHFWM(sender,data,userdata):
             fig.canvas.draw()
             data = np.frombuffer(fig.canvas.buffer_rgba(),dtype=np.uint8)
             dpg.set_value(textureid,data/255)
-        
+            runtime = t.time()
+            if(i%3==2):
+                timepassed = (runtime-tstart)/60
+                timeleft = (runtime-tstart)/(j*stepsa+i)*(stepsa*stepsb-j*stepsa-i)/60 
+                outputstr="{timepassed:.2f} minutes complete, {timeleft:.2f} minutes remaining".format(timepassed=timepassed,timeleft=timeleft)
+                dpg.set_value(timemonitor,outputstr)            
         
         z=ztemp
     if((stepsa==1)|(stepsb==1)):
