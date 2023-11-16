@@ -53,10 +53,10 @@ with dpg.window(label='Stage Control Window',width=440,height=310,on_close=close
        
     #unit setting 
     with dpg.group(horizontal=True): 
-        speed = dpg.add_input_double(label='',default_value=6000,
+        speed = dpg.add_input_double(label='',default_value=1.5,
                                width=150)
         sunits = dpg.add_combo(sunitlist,label='Speed',
-                               width=70,default_value='ct/s')
+                               width=70,default_value='mm/s')
     
     #stage zero/position
     with dpg.group(horizontal=True):
@@ -108,18 +108,18 @@ with dpg.window(label="HFWM Setup",pos=(440,0),width=560,height=310):
     #set stage speeds 
     with dpg.group(horizontal=True):
         speeda = dpg.add_input_double(label='',
-                                      default_value=dpg.get_value(speed), 
+                                      default_value=1.5, 
                                       width=150)
         sunita = dpg.add_combo(sunitlist,label='stage a speed',
-                                width=70,default_value='ct/s')
+                                width=70,default_value='mm/s')
         
     #set stage units 
     with dpg.group(horizontal= True): 
         speedb = dpg.add_input_double(label='',
-                                      default_value=dpg.get_value(speed),
+                                      default_value=5.0,
                                       width=150)
         sunitb = dpg.add_combo(sunitlist,label='stage b speed', 
-                               width=70,default_value='ct/s')
+                               width=70,default_value='mm/s')
     #set stage start point 
     with dpg.group(horizontal= True): 
         starta = dpg.add_input_double(label='Start a',default_value=-1.2,

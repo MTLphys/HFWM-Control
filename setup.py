@@ -2,7 +2,7 @@ from cx_Freeze import setup, Executable
 
 # Dependencies are automatically detected, but it might need
 # fine tuning.
-build_options = {'packages': [], 'excludes': [],'include_msvcr':[],'include_files':['Montserrat-Regular.otf','Chunk Five Print.otf']}
+build_options = {'packages': ['dearpygui','zhinst'], 'excludes': [],'include_msvcr':[],'include_files':['Montserrat-Regular.otf','Chunk Five Print.otf']}
 
 import sys
 base = 'Win32GUI' if sys.platform=='win32' else None

@@ -159,11 +159,14 @@ def waitformotion():
     """idle while waiting for device motion to complete
     """
     status =1
-    while (status !=0.0):
+    statuscount= 0
+    while (statuscount<5.0):
         cmd= "MOT:COND?\n"
         status = tryCatchRW(cmd)
         if len(re.findall(r'\d+', str(status)))>0:
             status=float(re.findall(r'\d+', str(status))[0])
+        if(status ==0.0):
+            statuscount+=1
         t.sleep(.001)
     return 0 
 
@@ -348,9 +351,9 @@ def runHFWM(sender,data,userdata):
         stageSelection(stagea)
         dest= xi*conversion[stagea][unita]/-2
         moveTo(dest)
-        print('maybe a subscribe issue ')
+        #print('maybe a subscribe issue ')
         device.subscribe()
-        print('not a subscribe issue ')
+        #print('not a subscribe issue ')
         for j,yi in enumerate(y):
             dpg.set_value(pb,(i*stepsb+j)/(stepsa*stepsb)) 
             if(j==0):
@@ -384,13 +387,13 @@ def runHFWM(sender,data,userdata):
             data = np.frombuffer(fig.canvas.buffer_rgba(),dtype=np.uint8)
             dpg.set_value(textureid,data/255)
             runtime = t.time()
-            print('maybe time counter issue')
+            #print('maybe time counter issue')
             if(i%3==2):
                 timepassed = (runtime-tstart)/60
-                timeleft = (runtime-tstart)/(i*stepsa+j)*(stepsa*stepsb-i*stepsa-j)/60 
+                timeleft = (runtime-tstart)/(i*stepsb+j)*(stepsa*stepsb-i*stepsb-j)/60 
                 outputstr="{timepassed:.2f} minutes complete, {timeleft:.2f} minutes remaining".format(timepassed=timepassed,timeleft=timeleft)
                 dpg.set_value(timemonitor,outputstr)
-            print('not time counter issue')            
+            #print('not time counter issue')            
         
         z=ztemp
     if((stepsa==1)|(stepsb==1)):
