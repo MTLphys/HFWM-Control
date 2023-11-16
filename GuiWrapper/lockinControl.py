@@ -1,6 +1,9 @@
 from zhinst.toolkit import Session
 import time as t
 import numpy as np 
+import sys 
+this = sys.modules[__name__]
+this.samplingrate = 5400
 def connect(int_time):
     """Connect to any available device 
 
@@ -18,8 +21,8 @@ def connect(int_time):
                     device.demods[0].sample.y
                     ]  
     TOTAL_DURATION = int_time
-    SAMPLING_RATE = 57566
-    SAMPLES = SAMPLING_RATE*TOTAL_DURATION
+    this.samplingrate = device.demods[0].rate()
+    SAMPLES = this.samplingrate*TOTAL_DURATION
     daq_module = session.modules.daq
     daq_module.device(device)
     daq_module.type(0) #continuous acquisition mode
