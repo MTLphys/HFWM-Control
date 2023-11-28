@@ -265,10 +265,66 @@ def moveStage(sender,data,userdata):
     dpg.set_value(userdata[1],"Current Position: "+str(endpoint))
     dpg.set_value(userdata[6],"Stage status: inactive") 
 
-
+def handlelog(start,end,num,unit):
+    """handle the generation of appropriate log space based on given parameter
+    Args: 
+        start: the initial value for the space (if negative a sign flip is applied making a space porportional to max value) 
+        end: the final value for the space (if negative a sign flip is applied )
+        num: the number of total spaces  
+    Returns:
+        logspace bound by start and end with num points 
+    """
+    unitmin = { 'fs':10,
+                'ps':.01,
+                'um':3,
+                'mm':.003,
+                'ct':430}
+    boundary = np.log10(unitmin[unit])
+    if(start==end):
+        combinedspace=np.ones(num)*start
+    elif((start<0)^(end<0)):
+        print('partial negative')
+        spacelength = np.abs(end-start)
+        startsteps=  int(np.floor(num*np.abs(start)/spacelength))
+        endsteps= int(np.floor(num*np.abs(end)/spacelength))
+        if((start<0)&(end!=0)): 
+            print("regular broken space")#
+            startspace= -np.logspace(np.log10(np.abs(start)),boundary,startsteps)
+            endspace = np.logspace(boundary,np.log10(np.abs(end)),endsteps)
+            combinedspace = np.append(startspace,0)
+            combinedspace = np.append(combinedspace,endspace)
+        elif((end<0)&(start!=0)):
+            print("reversed broken space")#
+            startspace= np.logspace(np.log10(np.abs(start)),boundary,startsteps)
+            endspace = -np.logspace(boundary,np.log10(np.abs(end)),endsteps)
+            combinedspace = np.append(startspace,0)
+            combinedspace = np.append(combinedspace,endspace)
+        elif(start == 0 ):
+            print('negative zero start space')
+            combinedspace = -np.logspace(boundary,np.log10(np.abs(end)),num)
+            combinedspace = np.append(0,combinedspace)
+        elif(end   == 0 ):
+            print('negative zero end space')
+            combinedspace = -np.logspace(np.log10(np.abs(start)),boundary,num)
+            combinedspace = np.append(combinedspace,0)
+    elif(start==0):
+        print('positive zero start space')
+        combinedspace = np.logspace(boundary,np.log10(np.abs(end)),num-1)
+        combinedspace = np.append(0,combinedspace)
+    elif(end==0):
+        print('positive zero end space')
+        combinedspace= np.logspace(np.log10(np.abs(start)),boundary,num-1)
+        combinedspace= np.append(combinedspace,0)
+    elif((start<0)&(end<0)):
+        print("negative consecutive space")
+        combinedspace= -np.logspace(np.log10(np.abs(start)),np.log10(np.abs(end)),num)
+    elif((start>0)&(end>0)):
+        print("positive consecutive space")
+        combinedspace= np.logspace(np.log10(np.abs(start)),np.log10(np.abs(end)),num)
+    return combinedspace
 def runHFWM(sender,data,userdata):
     """Run a rasterization of two stages while recording data read from 
-    the loc in amplifier 
+    the lock-in amplifier 
     Args: 
         sender(dpg function data): the function information covering the 
         settings of the calling function 
@@ -283,7 +339,8 @@ def runHFWM(sender,data,userdata):
         [9]enpoint stage b [10] steps for stage a [11]steps for stage b 
         [12] distance units stage a [13] distance unit stage b
         [14] progress bar [15] texture location for plotting image
-        [16] integration time """
+        [16] storage variable for mesh data[17] integration time 
+        [18] indicator for time elapsed [19] radio option for measurement space """
     #connect to zurich instruments lock in amplifier
 
     
@@ -302,7 +359,8 @@ def runHFWM(sender,data,userdata):
     stepsb = dpg.get_value(userdata[11])
     unita = dpg.get_value(userdata[12])
     unitb = dpg.get_value(userdata[13])
-
+    space = dpg.get_value(userdata[19])
+    
     #prime stage a 
     stageSelection(stagea)
     speeda = speeda*conversion[stagea][sunita]
@@ -322,9 +380,12 @@ def runHFWM(sender,data,userdata):
     inttime = dpg.get_value(userdata[17])
     device,session= connect(inttime)
     #generate xy space for raster
-    x= np.linspace(starta,enda,int(stepsa))
-    y= np.linspace(startb,endb,int(stepsb))
-    
+    if(space == "line space"):
+        x= np.linspace(starta,enda,int(stepsa))
+        y= np.linspace(startb,endb,int(stepsb))
+    elif(space=="log space"):
+        x= handlelog(starta,enda,int(stepsa),unita)
+        y= handlelog(startb,endb,int(stepsb),unitb)
     #grab global storage variable for z  
     global z
 

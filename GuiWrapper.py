@@ -150,9 +150,12 @@ with dpg.window(label="HFWM Setup",pos=(440,0),width=560,height=310):
         stepsb = dpg.add_input_int(label='steps stage b',
                                       default_value=25,
                                        width=150)
-    inttime = dpg.add_input_double(label='Integration time [s]',
+    with dpg.group(horizontal=True):
+        inttime = dpg.add_input_double(label='Integration time [s]',
                                 default_value=.05,
                                 width=150)
+        logopt = dpg.add_radio_button(["line space","log space"], horizontal=True)
+    
     
     #run 
     zvalues=np.zeros(1)
@@ -165,7 +168,7 @@ with dpg.window(label="HFWM Setup",pos=(440,0),width=560,height=310):
                    unita,unitb,   #[12,13]
                    pb,texture_id, #[14,15]
                    zvalues,inttime,#[16,17]
-                   timemonitor] #[18]
+                   timemonitor,logopt] #[18,19]
     dpg.add_file_dialog(
         directory_selector=True, show=False, callback=savefile, tag="file_dialog_id",
         cancel_callback=savecanceled, width=700 ,height=400)
