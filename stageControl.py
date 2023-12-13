@@ -286,7 +286,7 @@ def handlelog(start,end,num,unit):
         print('partial negative')
         spacelength = np.abs(end-start)
         startsteps=  int(np.floor(num*np.abs(start)/spacelength))
-        endsteps= int(np.floor(num*np.abs(end)/spacelength))
+        endsteps= int(num-startsteps-1)
         if((start<0)&(end!=0)): 
             print("regular broken space")#
             startspace= -np.logspace(np.log10(np.abs(start)),boundary,startsteps)
@@ -380,6 +380,7 @@ def runHFWM(sender,data,userdata):
     inttime = dpg.get_value(userdata[17])
     device,session= connect(inttime)
     #generate xy space for raster
+    print(space)
     if(space == "line space"):
         x= np.linspace(starta,enda,int(stepsa))
         y= np.linspace(startb,endb,int(stepsb))

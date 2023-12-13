@@ -154,7 +154,7 @@ with dpg.window(label="HFWM Setup",pos=(440,0),width=560,height=310):
         inttime = dpg.add_input_double(label='Integration time [s]',
                                 default_value=.05,
                                 width=150)
-        logopt = dpg.add_radio_button(["line space","log space"], horizontal=True)
+        logopt = dpg.add_radio_button(["line space","log space"], horizontal=True,default_value="line space")
     
     
     #run 
